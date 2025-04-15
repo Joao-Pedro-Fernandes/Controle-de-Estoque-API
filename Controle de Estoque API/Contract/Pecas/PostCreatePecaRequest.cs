@@ -7,6 +7,7 @@
         public string Cor { get; set; }
         public string Localizacao { get; set; }
         public string Grau_Importancia { get; set; }
-        public int Quantidade_Estoque { get; set; }
+
+        public List<int>IdsCompatibilidades { get; set; }
     }
 }

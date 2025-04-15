@@ -18,7 +18,11 @@ namespace Controle_de_Estoque_API.Services
 
         public async Task<IActionResult> GetAllPecas()
         {
-            return Ok(await _context.Pecas.ToListAsync());
+            var lista = await _context.Pecas.OrderBy(x=>x.Marca)
+                .ThenBy(x=>x.Modelo)
+                .ThenBy(x=>x.Localizacao)
+                .ToListAsync();
+            return Ok(lista);
         }
 
         public async Task<IActionResult> GetPecasByName(string query)
@@ -32,20 +36,37 @@ namespace Controle_de_Estoque_API.Services
 
         public async Task<IActionResult> CreatePeca(PostCreatePecaRequest peca)
         {
-            if (await _context.Pecas.FirstOrDefaultAsync(x => x.Modelo.Contains(peca.Modelo) && x.Cor.Contains(peca.Cor) && x.Marca.Contains(peca.Marca)) == null)
+            if (await _context.Pecas.FirstOrDefaultAsync(x => x.Modelo==peca.Modelo && x.Cor==peca.Cor && x.Marca==peca.Marca) == null)
             {
+
                 Peca p = new Peca
                 {
                     Marca = peca.Marca,
                     Modelo = peca.Modelo,
                     Cor = peca.Cor,
                     Grau_Importancia = peca.Grau_Importancia,
-                    Quantidade_Estoque = peca.Quantidade_Estoque,
-                    Localizacao = peca.Localizacao
+                    Localizacao = peca.Localizacao,
                 };
 
                 await _context.Pecas.AddAsync(p);
                 await _context.SaveChangesAsync();
+
+                if (peca.IdsCompatibilidades.Any())
+                {
+                    var lastId = await _context.Pecas
+                        .OrderByDescending(x => x.Id)
+                        .FirstOrDefaultAsync();
+                    foreach (var item in peca.IdsCompatibilidades)
+                    {
+                        CompatibilidadePeca comp = new CompatibilidadePeca
+                        {
+                            PecaId = lastId.Id,
+                            PecaCompativelId = item
+                        };
+                        await _context.CompatibilidadePecas.AddAsync(comp);
+                    }
+                    await _context.SaveChangesAsync();
+                }             
 
                 return Created(new { message = "Peca cadastrada com sucesso!"});
             }
@@ -60,8 +81,6 @@ namespace Controle_de_Estoque_API.Services
 
             if (currentPeca == null)
                 return BadRequest("Peca não encontrada.");
-            else if (currentPeca.Modelo == peca.Modelo && currentPeca.Cor == peca.Cor && currentPeca.Marca == peca.Marca && currentPeca.Quantidade_Estoque == peca.Quantidade_Estoque )
-                return BadRequest("Peca exatamente igual já existente.");
             else
             {
                 currentPeca.Marca = peca.Marca;
@@ -69,6 +88,7 @@ namespace Controle_de_Estoque_API.Services
                 currentPeca.Cor = peca.Cor;
                 currentPeca.Quantidade_Estoque = peca.Quantidade_Estoque;
                 currentPeca.Grau_Importancia = peca.Grau_Importancia;
+                currentPeca.Localizacao = peca.Localizacao;
                 _context.Entry(currentPeca);
             }
                 

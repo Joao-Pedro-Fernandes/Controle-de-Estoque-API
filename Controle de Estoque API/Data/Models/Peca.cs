@@ -9,5 +9,9 @@
         public string Localizacao { get; set; }
         public string Grau_Importancia { get; set; }
         public int Quantidade_Estoque { get; set; }
+
+        public List<CompatibilidadePeca> Compatibilidades { get; set; } = new List<CompatibilidadePeca>();
+
+        public List<ExemplarPeca> ExemplarPecas { get; set; } = new List<ExemplarPeca>();
     }
 }
